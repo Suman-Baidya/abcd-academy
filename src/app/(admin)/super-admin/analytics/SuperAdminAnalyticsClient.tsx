@@ -963,18 +963,18 @@ export function SuperAdminAnalyticsClient({ initialData }: SuperAdminAnalyticsPr
               variant="outline"
               size="sm"
               onClick={handleExport}
-              className="h-8 text-xs font-semibold gap-1 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+              disabled={isExporting}
+              className="h-8 text-xs font-semibold gap-1.5 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-xs rounded-lg transition-colors"
             >
-              <Download className="h-3.5 w-3.5" />
+              <Download className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
               Download Backup
             </Button>
             <Button
-              variant="destructive"
               size="sm"
               onClick={() => setShowPurgeModal(true)}
-              className="h-8 text-xs font-semibold gap-1 bg-red-600 hover:bg-red-700"
+              className="h-8 text-xs font-semibold gap-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-xs border border-rose-600 dark:border-rose-500 rounded-lg transition-all"
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 className="h-3.5 w-3.5 text-white" />
               Clear Old Logs
             </Button>
           </div>
@@ -995,7 +995,7 @@ export function SuperAdminAnalyticsClient({ initialData }: SuperAdminAnalyticsPr
           </div>
           <div className="p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
             <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Estimated Table Footprint</span>
-            <span className="text-base font-bold text-emerald-600 mt-0.5 block">
+            <span className="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 block">
               ~{storageDisplayMB} MB (Ultra Light)
             </span>
           </div>
@@ -1004,24 +1004,24 @@ export function SuperAdminAnalyticsClient({ initialData }: SuperAdminAnalyticsPr
 
       {/* Confirmation Modal for Pruning */}
       {showPurgeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in-0 duration-150">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-red-600">
-              <div className="h-10 w-10 rounded-xl bg-red-100 dark:bg-red-950/50 flex items-center justify-center">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
                 <AlertTriangle className="h-5 w-5" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">Confirm Data Clearance</h3>
-                <p className="text-xs text-slate-500">Permanently delete raw page visit logs older than threshold</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Permanently delete raw page visit logs older than threshold</p>
               </div>
             </div>
 
-            <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg">
+            <div className="space-y-2.5 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
               <p>
-                • <strong>Preserved Data:</strong> All captured student contact leads, phone numbers, and inquiry forms are <strong>NOT</strong> deleted.
+                • <strong className="text-slate-900 dark:text-white">Preserved Data:</strong> All captured student contact leads, phone numbers, and inquiry forms are <strong className="text-emerald-600 dark:text-emerald-400">NOT</strong> deleted.
               </p>
               <p>
-                • <strong>Deleted Data:</strong> Raw page visit clickstreams older than the chosen cutoff date.
+                • <strong className="text-slate-900 dark:text-white">Deleted Data:</strong> Raw page visit clickstreams older than the chosen cutoff date.
               </p>
               <div className="pt-2">
                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
@@ -1030,7 +1030,8 @@ export function SuperAdminAnalyticsClient({ initialData }: SuperAdminAnalyticsPr
                 <select
                   value={retentionDays}
                   onChange={(e) => setRetentionDays(Number(e.target.value))}
-                  className="w-full h-8 px-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold"
+                  disabled={isPurging}
+                  className="w-full h-8 px-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
                 >
                   <option value={365}>Older than 1 Year (365 Days) - Recommended</option>
                   <option value={180}>Older than 6 Months (180 Days)</option>
@@ -1044,18 +1045,28 @@ export function SuperAdminAnalyticsClient({ initialData }: SuperAdminAnalyticsPr
                 variant="outline"
                 size="sm"
                 onClick={() => setShowPurgeModal(false)}
-                className="h-8 text-xs"
+                disabled={isPurging}
+                className="h-8 text-xs font-semibold border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
               >
                 Cancel
               </Button>
               <Button
-                variant="destructive"
                 size="sm"
                 disabled={isPurging}
                 onClick={handlePurge}
-                className="h-8 text-xs font-semibold bg-red-600 hover:bg-red-700"
+                className="h-8 px-3.5 text-xs font-semibold gap-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-lg shadow-xs transition-all disabled:opacity-50"
               >
-                {isPurging ? "Pruning..." : "Proceed with Clearance"}
+                {isPurging ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin text-white" />
+                    Pruning...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-3.5 w-3.5 text-white" />
+                    Proceed with Clearance
+                  </>
+                )}
               </Button>
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { getRoutingConfig } from "@/lib/routing";
 
 const STORAGE_KEY = "rgycsp_visitor_id";
 
@@ -21,34 +22,10 @@ function getOrGenerateVisitorId(): string {
 
 function detectTenantFromUrl(pathname: string): string | null {
   if (typeof window === "undefined") return null;
-  // 1. Subdirectory check: /app/[tenant]
-  if (pathname.startsWith("/app/")) {
-    const parts = pathname.split("/");
-    if (parts.length >= 3 && parts[2]) {
-      return parts[2].toLowerCase();
-    }
+  const config = getRoutingConfig(pathname, window.location.hostname);
+  if (config.tenant && config.tenant !== "super-admin" && config.tenant !== "root") {
+    return config.tenant;
   }
-
-  // 2. Subdomain check
-  const hostname = window.location.hostname.toLowerCase();
-  
-  // Local development subdomain: e.g. chandpara.localhost
-  if (hostname.endsWith(".localhost")) {
-    const sub = hostname.replace(/\.localhost$/, "");
-    if (sub && sub !== "www" && sub !== "app" && sub !== "admin" && sub !== "super-admin") {
-      return sub;
-    }
-  }
-
-  // Production subdomain: e.g. chandpara.rgycsp.tech
-  const parts = hostname.split(".");
-  if (parts.length > 2 && !/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
-    const sub = parts[0];
-    if (sub !== "www" && sub !== "app" && sub !== "admin" && sub !== "super-admin") {
-      return sub;
-    }
-  }
-
   return null;
 }
 

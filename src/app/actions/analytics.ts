@@ -2,6 +2,8 @@
 
 import { db } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { createLog } from "@/app/actions/logs";
+import { findWorkspaceByTenant } from "@/lib/workspace";
 
 function getDateRanges(range: string = "30d") {
   const now = new Date();
@@ -447,16 +449,8 @@ export async function getFranchiseAnalytics(tenantOrWorkspaceId: string, filters
     throw new Error("Unauthorized");
   }
 
-  // Find workspace
-  const normalized = tenantOrWorkspaceId?.toLowerCase()?.trim();
-  const workspace = await db.workspace.findFirst({
-    where: {
-      OR: [
-        { id: tenantOrWorkspaceId },
-        { subdomain: normalized },
-        { centerCode: { equals: normalized, mode: "insensitive" } },
-      ],
-    },
+  // Find workspace using Golden Rule helper
+  const workspace = await findWorkspaceByTenant(tenantOrWorkspaceId, {
     select: { id: true, name: true, subdomain: true, centerCode: true },
   });
 
@@ -720,6 +714,25 @@ export async function updateLeadStatus(leadId: string, status: string, notes?: s
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
 
+  const existingLead = await db.visitorLead.findUnique({
+    where: { id: leadId },
+    select: { id: true, workspaceId: true },
+  });
+  if (!existingLead) throw new Error("Lead record not found");
+
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN" || session.user.role === "SUPER_ADMIN_MANAGER";
+  if (!isSuperAdmin) {
+    if (!existingLead.workspaceId) {
+      throw new Error("Unauthorized access to this lead");
+    }
+    const roleRecord = await db.workspaceRole.findFirst({
+      where: { userId: session.user.id, workspaceId: existingLead.workspaceId },
+    });
+    if (!roleRecord) {
+      throw new Error("Unauthorized access to this franchise lead");
+    }
+  }
+
   const lead = await db.visitorLead.update({
     where: { id: leadId },
     data: {
@@ -737,6 +750,19 @@ export async function updateLeadStatus(leadId: string, status: string, notes?: s
 export async function exportAnalyticsToExcel(filters: { workspaceId?: string; dateRange?: string } = {}) {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
+
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN" || session.user.role === "SUPER_ADMIN_MANAGER";
+  if (!isSuperAdmin) {
+    if (!filters.workspaceId) {
+      throw new Error("Unauthorized: Franchise context required to export data");
+    }
+    const roleRecord = await db.workspaceRole.findFirst({
+      where: { userId: session.user.id, workspaceId: filters.workspaceId },
+    });
+    if (!roleRecord) {
+      throw new Error("Unauthorized access to this franchise analytics export");
+    }
+  }
 
   const { startDate } = getDateRanges(filters.dateRange || "1y");
   const whereClause: any = { createdAt: { gte: startDate } };
@@ -849,11 +875,12 @@ export async function purgeOldAnalyticsLogs(retentionDays: number = 365) {
     throw new Error("Unauthorized: Only Super Admin can purge analytics data");
   }
 
-  if (retentionDays < 30) {
-    throw new Error("Minimum retention period allowed is 30 days");
+  const days = Math.round(Number(retentionDays));
+  if (!Number.isFinite(days) || days < 30 || days > 3650) {
+    throw new Error("Invalid retention period. Allowed range is 30 to 3650 days.");
   }
 
-  const cutoffDate = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+  const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   // Delete older page visits first
   const deletedVisits = await db.pageVisit.deleteMany({
@@ -865,11 +892,19 @@ export async function purgeOldAnalyticsLogs(retentionDays: number = 365) {
     where: { createdAt: { lt: cutoffDate } },
   });
 
+  // Log to audit system
+  await createLog(
+    "WARNING",
+    "ANALYTICS",
+    `Purged ${deletedVisits.count} page visits and ${deletedSessions.count} sessions older than ${days} days`,
+    session.user.email || session.user.id
+  );
+
   return {
     success: true,
     cutoffDate: cutoffDate.toISOString(),
     deletedVisitsCount: deletedVisits.count,
     deletedSessionsCount: deletedSessions.count,
-    message: `Successfully cleared ${deletedVisits.count} page visits and ${deletedSessions.count} visitor sessions older than ${retentionDays} days.`,
+    message: `Successfully cleared ${deletedVisits.count} page visits and ${deletedSessions.count} visitor sessions older than ${days} days.`,
   };
 }

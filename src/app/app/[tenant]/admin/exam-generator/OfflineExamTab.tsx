@@ -447,7 +447,7 @@ export default function OfflineExamTab({ workspaceId, workspace, superAdminName,
                 <Button variant="outline" size="sm" className="flex-1 h-8 rounded-lg text-xs font-semibold" onClick={() => setExamToDelete(null)} disabled={isDeleting}>
                   Cancel
                 </Button>
-                <Button variant="destructive" size="sm" className="flex-1 h-8 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700" onClick={confirmDelete} disabled={isDeleting}>
+                <Button variant="destructive" size="sm" className="flex-1 h-8 rounded-lg text-xs font-semibold text-white bg-red-600 hover:bg-red-700" onClick={confirmDelete} disabled={isDeleting}>
                   {isDeleting ? "Deleting..." : "Yes, Delete"}
                 </Button>
               </div>
