@@ -37,45 +37,105 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LayoutDashboard, LogOut, Settings, User as UserIcon, LogIn } from "lucide-react";
+import { LayoutDashboard, LogOut, Settings, User as UserIcon, LogIn, ShieldCheck, ChevronRight } from "lucide-react";
 
 function UserMenu({ user, dashboardHref, dashboardLabel }: { user: any, dashboardHref: string, dashboardLabel: string }) {
   if (!user) return null;
+
+  const roleName = user?.role
+    ? user.role
+        .split("_")
+        .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ")
+    : "Member";
+
+  const profileHref = (user?.role === "SUPER_ADMIN" || user?.role === "SUPER_ADMIN_MANAGER" || user?.isDeveloper)
+    ? "/super-admin/profile"
+    : "/workspaces";
+
   return (
     <div className="flex items-center gap-4 relative z-[1000]">
       <DropdownMenu>
-        <DropdownMenuTrigger className="outline-none" suppressHydrationWarning>
-          <div className="flex items-center gap-3 cursor-pointer group">
-            <Avatar className="h-11 w-11 ring-2 ring-primary/10 group-hover:ring-primary transition-all duration-300 shadow-lg">
-              <AvatarImage src={user.image} />
-              <AvatarFallback className="bg-primary text-primary-foreground font-bold">{user.name?.charAt(0)}</AvatarFallback>
+        <DropdownMenuTrigger
+          className="relative flex items-center gap-2 rounded-full p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group transition-all cursor-pointer bg-transparent border-none"
+          aria-label="User profile menu"
+          suppressHydrationWarning
+        >
+          <div className="relative">
+            <Avatar className="h-10 w-10 sm:h-11 sm:w-11 ring-2 ring-primary/20 group-hover:ring-primary/60 transition-all duration-300 shadow-md">
+              <AvatarImage src={user.image} alt={user.name || "User"} />
+              <AvatarFallback className="bg-gradient-to-tr from-primary to-blue-600 text-primary-foreground font-bold text-sm">
+                {user.name?.charAt(0)?.toUpperCase() || "U"}
+              </AvatarFallback>
             </Avatar>
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-background" />
           </div>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="z-[99999] w-64 rounded-[1.5rem] p-3 border-slate-100 dark:border-zinc-800 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-          <div className="flex items-center gap-3 px-2 py-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={user.image} />
-              <AvatarFallback className="bg-primary text-primary-foreground font-bold">{user.name?.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <p className="text-sm font-bold text-foreground leading-none mb-1">{user.name}</p>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{user.role?.replace('_', ' ')}</p>
+
+        <DropdownMenuContent
+          align="end"
+          sideOffset={8}
+          className="z-[99999] w-72 rounded-2xl p-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-2xl shadow-slate-950/15 dark:shadow-black/60 animate-in fade-in-0 zoom-in-95 duration-150"
+        >
+          {/* User Profile Card Header */}
+          <div className="p-3 rounded-xl bg-slate-50/90 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 mb-1.5 flex items-center gap-3">
+            <div className="relative shrink-0">
+              <Avatar className="h-10 w-10 ring-2 ring-white dark:ring-slate-700 shadow-sm">
+                <AvatarImage src={user.image} alt={user.name || "User"} />
+                <AvatarFallback className="bg-gradient-to-tr from-primary to-blue-600 text-primary-foreground font-bold text-sm">
+                  {user.name?.charAt(0)?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-800" />
+            </div>
+            <div className="flex flex-col min-w-0 flex-1">
+              <p className="text-sm font-bold text-slate-900 dark:text-white truncate leading-tight">
+                {user.name || "User"}
+              </p>
+              {user.email && (
+                <p className="text-[11px] font-normal text-slate-500 dark:text-slate-400 truncate leading-tight mt-0.5">
+                  {user.email}
+                </p>
+              )}
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wide uppercase bg-primary/10 text-primary dark:bg-primary/20 dark:text-blue-400 border border-primary/20">
+                  <ShieldCheck className="w-3 h-3 shrink-0" />
+                  {roleName}
+                </span>
+              </div>
             </div>
           </div>
-          <DropdownMenuSeparator className="my-2 bg-slate-50 dark:bg-zinc-900" />
-          <DropdownMenuLabel className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Management</DropdownMenuLabel>
-          <Link href={dashboardHref}>
-            <DropdownMenuItem className="rounded-xl h-11 gap-3 font-bold text-xs uppercase tracking-widest cursor-pointer mt-1">
-              <LayoutDashboard className="h-4 w-4" /> {dashboardLabel}
-            </DropdownMenuItem>
-          </Link>
-          <Link href={(user?.role === "SUPER_ADMIN" || user?.role === "SUPER_ADMIN_MANAGER") ? "/super-admin/profile" : "/profile"}>
-            <DropdownMenuItem className="rounded-xl h-11 gap-3 font-bold text-xs uppercase tracking-widest cursor-pointer">
-              <UserIcon className="h-4 w-4" /> My Profile
-            </DropdownMenuItem>
-          </Link>
-          <DropdownMenuSeparator className="my-2 bg-slate-50 dark:bg-zinc-900" />
+
+          {/* Navigation Section */}
+          <div className="px-2.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            Navigation
+          </div>
+
+          <DropdownMenuItem
+            render={<Link href={dashboardHref} />}
+            className="h-10 px-2.5 rounded-xl cursor-pointer flex items-center gap-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100/90 dark:hover:bg-slate-800/70 focus:bg-slate-100/90 dark:focus:bg-slate-800/70 hover:text-slate-900 dark:hover:text-white focus:text-slate-900 dark:focus:text-white transition-all duration-150 group outline-none"
+          >
+            <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:scale-110 group-focus:scale-110">
+              <LayoutDashboard className="h-3.5 w-3.5" />
+            </div>
+            <span className="flex-1 truncate">{dashboardLabel}</span>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-40 group-hover:opacity-100 group-focus:opacity-100 group-hover:translate-x-0.5 group-focus:translate-x-0.5 transition-all duration-150" />
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            render={<Link href={profileHref} />}
+            className="h-10 px-2.5 rounded-xl cursor-pointer flex items-center gap-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100/90 dark:hover:bg-slate-800/70 focus:bg-slate-100/90 dark:focus:bg-slate-800/70 hover:text-slate-900 dark:hover:text-white focus:text-slate-900 dark:focus:text-white transition-all duration-150 group outline-none"
+          >
+            <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:scale-110 group-focus:scale-110">
+              <UserIcon className="h-3.5 w-3.5" />
+            </div>
+            <span className="flex-1 truncate">My Profile</span>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 opacity-40 group-hover:opacity-100 group-focus:opacity-100 group-hover:translate-x-0.5 group-focus:translate-x-0.5 transition-all duration-150" />
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator className="my-1.5 bg-slate-100 dark:bg-slate-800/80" />
+
+          {/* Sign Out Action */}
           <DropdownMenuItem
             onClick={async () => {
               const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost:3000";
@@ -83,9 +143,12 @@ function UserMenu({ user, dashboardHref, dashboardLabel }: { user: any, dashboar
               await signOut({ redirect: false });
               window.location.href = `${protocol}://${rootDomain}/`;
             }}
-            className="rounded-xl h-11 gap-3 font-bold text-xs uppercase tracking-widest cursor-pointer text-red-500 focus:bg-red-500 focus:text-white"
+            className="h-10 px-2.5 rounded-xl cursor-pointer flex items-center gap-2.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 focus:bg-rose-50 dark:focus:bg-rose-950/40 hover:text-rose-700 dark:hover:text-rose-300 focus:text-rose-700 dark:focus:text-rose-300 transition-all duration-150 group outline-none"
           >
-            <LogOut className="h-4 w-4" /> Sign Out
+            <div className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:scale-110 group-focus:scale-110">
+              <LogOut className="h-3.5 w-3.5" />
+            </div>
+            <span className="flex-1">Sign Out</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -142,6 +205,7 @@ export function LandingNavbar({ settings, user, isHome }: { settings?: any, user
 
   const dashboardHref = (user?.role === "SUPER_ADMIN" || user?.role === "SUPER_ADMIN_MANAGER" || user?.isDeveloper) ? "/super-admin" : "/workspaces";
   const dashboardLabel = (user?.role === "SUPER_ADMIN" || user?.role === "SUPER_ADMIN_MANAGER" || user?.isDeveloper) ? "Global Admin" : "My Workspaces";
+  const profileHref = (user?.role === "SUPER_ADMIN" || user?.role === "SUPER_ADMIN_MANAGER" || user?.isDeveloper) ? "/super-admin/profile" : "/workspaces";
 
   // Navbar Logic Config with deep fallbacks
   const config = {
@@ -455,7 +519,7 @@ export function LandingNavbar({ settings, user, isHome }: { settings?: any, user
               <div className="flex items-center gap-4">
                 {user && (
                   <>
-                    <Link href="/profile" onClick={() => setIsOpen(false)} className="p-2.5 bg-slate-100 dark:bg-zinc-900 rounded-full hover:text-primary transition-colors">
+                    <Link href={profileHref} onClick={() => setIsOpen(false)} className="p-2.5 bg-slate-100 dark:bg-zinc-900 rounded-full hover:text-primary transition-colors">
                       <UserIcon className="w-4 h-4" />
                     </Link>
                     <button onClick={async () => {
